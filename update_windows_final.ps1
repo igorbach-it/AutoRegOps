@@ -1,5 +1,7 @@
 ﻿$wshell = New-Object -ComObject Wscript.Shell
 
+Start-Transcript C:\Scripts\update_windows_final_ERROR.log
+
 $Logfile = "C:\Scripts\update_windows_final.log"
 function WriteLog
 {
@@ -10,9 +12,27 @@ $LogMessage = "$Stamp $LogString"
 Add-content $LogFile -value $LogMessage
 }
 
+
     WriteLog "--------------------------------”
     WriteLog "Чистка ременных файлов завершена”
-    WriteLog "Чистка кеша сервера 1с завершена”
+    
+gci 'C:\inetpub\logs\LogFiles' -Include '*.log' -Recurse | ? LastWriteTime -LT (Get-Date).AddDays(-7) | Remove-Item
+
+
+    $files = dir C:\inetpub\logs\LogFiles
+if ($files -ne $null)
+{
+   WriteLog "Чистка логов iis завершена - OK”
+}
+else
+{
+   WriteLog "Чистка логов iis завершена - FAIL”
+}
+ 
+
+Dism.exe /Online /Cleanup-Image /StartComponentCleanup
+
+    WriteLog "Чистка хранилища компонентов WinSxS завершена”
 
 $KVRTPath = "C:\Scripts\KVRT"
 
@@ -24,7 +44,17 @@ $KVRTPath = "C:\Scripts\KVRT"
     Write-Verbose "Загружаем Kaspersky Virus Removal Tool из: $KVRTurl"
     Invoke-WebRequest -URI $KVRTurl -UseBasicParsing -OutFile "$KVRTPath\KVRT.exe"
 
-    WriteLog "антивирус скачан”
+
+    $files = dir C:\Scripts\KVRT\*.exe
+if ($files -ne $null)
+{
+   WriteLog "антивирус скачан - OK”
+}
+else
+{
+   WriteLog "антивирус скачан - FAIL”
+}
+    
 
   $scannowDate = Get-Date -Format "yyyyMMdd"
   New-Item -ErrorAction Ignore -ItemType directory -Path "$KVRTPath\$scannowDate"
@@ -32,14 +62,25 @@ $KVRTPath = "C:\Scripts\KVRT"
   $resultScan = & "$KVRTPath\KVRT.exe" -d "$KVRTPath\$scannowDate" -accepteula -silent -processlevel 1 -dontencrypt | Out-Null # запускает сканирование антивирусом
   Remove-item C:\Scripts\KVRT\KVRT.exe
 
-  WriteLog "антивирус завершил сканирование, результаты можно посмотреть $KVRTPath\$scannowDate\Reports”
+      $files = dir $KVRTPath\$scannowDate\Reports
+if ($files -ne $null)
+{
+   WriteLog "антивирус завершил сканирование, результаты можно посмотреть $KVRTPath\$scannowDate\Reports - OK”
+}
+else
+{
+   WriteLog "антивирус завершил сканирование, результаты можно посмотреть $KVRTPath\$scannowDate\Reports - FAIL”
+}
+
 
 $Output = $wshell.Popup("Сканирование завершено, результаты можно будет посмотреть в каталоге $KVRTPath\$scannowDate\Reports",30,"Сканирование на вирусы")
 
 Install-PackageProvider NuGet -Force
 Install-Module PSWindowsUpdate -Confirm:$false -Force # установщик обновлений через Pshell
-Get-WindowsUpdate -AcceptAll -Install -AutoReboot # скачивание и установка обновлений Windows
+WindowsUpdate -AcceptAll -Install #-AutoReboot # скачивание и установка обновлений Windows
 
-WriteLog "обновление windows завершено”
+    WriteLog "обновление windows завершено”
 
 $Output = $wshell.Popup("обновление завершено",0,"Обновление windows")
+
+Stop-Transcript

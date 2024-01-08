@@ -58,61 +58,7 @@ foreach ($profile in $userProfiles) {
     }
 }
 
-
-
-# Получите корень каталога профиля пользователя
-# $userProfileRoot = [System.Environment]::GetEnvironmentVariable("USERPROFILE")
-# $userProfileRoot = Split-Path $userProfileRoot
-
-#Получите системный каталог TEMP и каталог Windows
-#$tempDir = [System.Environment]::GetEnvironmentVariable("TEMP")
-# $windowsDir = [System.Environment]::GetEnvironmentVariable("WINDIR")
-
-#Для каждого подкаталога в корневом каталоге профиля пользователя
-# Get-ChildItem $userProfileRoot | ForEach-Object {
-    # if ($_.Name -notin @("all users", "default user", "localservice", "networkservice")) {
-        # WriteLog "Обработка профиля: $($_.Name)"
-        
-        #Удалить указанные папки
-        # $foldersToDelete | ForEach-Object {
-            # $folderToDelete = $_
-            # $folderPath = Join-Path -Path $userProfileRoot -ChildPath ("{0}\{1}" -f $_.Name, $folderToDelete)
-            # if (Test-Path $folderPath) {
-                # WriteLog "Удаление $folderPath"
-                # Remove-Item -Path $folderPath -Recurse -Force -ErrorAction SilentlyContinue
-            # } else {
-                # WriteLog "Папка для удаления не найдена: $folderPath"
-            # }
-        # }
-    # }
-# }
-
-# Удалить содержимое системного каталога TEMP
-#WriteLog "Обработка папки: $tempDir"
-#Remove-Item -Path "$tempDir\*" -Recurse -Force -ErrorAction SilentlyContinue
-
-# Удалить содержимое каталога Windows\Temp
-#$windowsTemp = Join-Path -Path $windowsDir -ChildPath "Temp"
-#WriteLog "Обработка папки: $windowsTemp"
-#Remove-Item -Path "$windowsTemp\*" -Recurse -Force -ErrorAction SilentlyContinue
-
-# Создаем функцию для удаления файлов
-function DeleteFiles {
-    Param ([string]$Path, [string]$Pattern)
-    try {
-        Get-ChildItem -Path $Path -Filter $Pattern -Recurse -ErrorAction Stop | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-7) } | Remove-Item -ErrorAction Stop
-    } catch {
-        WriteLog "Ошибка при удалении файлов: $($_.Exception.Message)"
-    }
-}
-
-#DeleteFiles 'C:\inetpub\logs' '*.log'
 WriteLog "Чистка временных файлов завершена"
-
-#Dism.exe /Online /Cleanup-Image /StartComponentCleanup
-#WriteLog "Чистка хранилища компонентов WinSxS завершена"
-
-#$wshell = New-Object -ComObject Wscript.Shell
 
 WriteLog "--------------------------------"
 
@@ -177,7 +123,6 @@ if ($files -ne $null) {
 } else {
     WriteLog "Антивирус завершил сканирование, результаты можно посмотреть $KVRTPath\$scannowDate\Reports - FAIL"
 }
->
 
 # Получение информации о службе обновления Windows
 $windowsUpdateService = Get-Service -Name wuauserv
@@ -239,14 +184,5 @@ else
 }
 
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Undefined
-#$Output = $wshell.Popup("Обновление завершено", 30, "Обновление Windows")
-#$wshell = New-Object -ComObject Wscript.Shell
-#$Confirmation = $wshell.Popup("Выполнить перезагрузку?",0, "Перезагрузка Windows Server",4+32)
-#if ($Confirmation -eq 6) {
 WriteLog "Запущена автоматическая перезагрузка"
 Restart-Computer -Force
-#WriteLog "Перезагрузка выполнена"
-#} 
-#else {
-#    WriteLog "Перезагрузка не выполнена" 
-#}

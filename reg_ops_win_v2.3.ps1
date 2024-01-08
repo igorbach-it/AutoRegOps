@@ -106,7 +106,7 @@ function DeleteFiles {
     }
 }
 
-DeleteFiles 'C:\inetpub\logs\LogFiles' '*.log'
+#DeleteFiles 'C:\inetpub\logs' '*.log'
 WriteLog "Чистка временных файлов завершена"
 
 #Dism.exe /Online /Cleanup-Image /StartComponentCleanup
@@ -116,13 +116,36 @@ WriteLog "Чистка временных файлов завершена"
 
 WriteLog "--------------------------------"
 
+# Проверка, установлен ли IIS
+$IisInstalled = Get-WindowsFeature -Name Web-Server
+if ($IisInstalled.Installed) {
+    # Проверка, запущена ли служба IIS
+    $iisService = Get-Service -Name W3SVC
+    if ($iisService.Status -eq 'Running') {
+        # Служба IIS запущена, выполнение скрипта очистки логов
 
-$files = Get-ChildItem 'C:\inetpub\logs\LogFiles' -Include '*.log' -Recurse | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-7) } | Remove-Item -ErrorAction SilentlyContinue
-if ($files -ne $null) {
-    WriteLog "Чистка логов IIS завершена - OK"
+        $files = Get-ChildItem 'C:\inetpub\logs' -Include '*.log' -Recurse | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-7) }
+
+        if ($files) {
+            $files | Remove-Item -ErrorAction SilentlyContinue
+            $deletedFiles = $files | Where-Object { -not (Test-Path $_.FullName) }
+
+            if ($deletedFiles) {
+                WriteLog "Чистка логов IIS завершена - OK"
+            } else {
+                WriteLog "Чистка логов IIS завершена - FAIL"
+            }
+        } else {
+            WriteLog "Нет файлов для удаления"
+        }
+
+    } else {
+        WriteLog "Служба IIS не запущена"
+    }
 } else {
-    WriteLog "Чистка логов IIS завершена - FAIL"
+    WriteLog "IIS не установлен"
 }
+
 
 $KVRTPath = "C:\Scripts\KVRT"
 
@@ -154,16 +177,28 @@ if ($files -ne $null) {
 } else {
     WriteLog "Антивирус завершил сканирование, результаты можно посмотреть $KVRTPath\$scannowDate\Reports - FAIL"
 }
-#>
+>
 
-# Проверка и запуск службы обновления Windows
+# Получение информации о службе обновления Windows
 $windowsUpdateService = Get-Service -Name wuauserv
+
+# Проверка, не установлен ли тип запуска службы как "Disabled"
+if ((Get-WmiObject -Class Win32_Service -Filter "Name='wuauserv'").StartMode -eq "Disabled") {
+    WriteLog "Изменение типа запуска службы обновления Windows на 'Manual'"
+    # Изменение типа запуска на "Manual"
+    Set-Service -Name wuauserv -StartupType Manual
+}
+
+# Проверка статуса службы
 if ($windowsUpdateService.Status -ne "Running") {
     WriteLog "Запуск службы обновления Windows"
+    # Запуск службы
     Start-Service -Name wuauserv
 } else {
     WriteLog "Служба обновления Windows уже запущена"
 }
+
+
 
 # Установка модуля PackageManagement, если отсутствует
 if (-not (Get-Module -ListAvailable -Name PackageManagement)) {
@@ -205,12 +240,13 @@ else
 
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Undefined
 #$Output = $wshell.Popup("Обновление завершено", 30, "Обновление Windows")
-$wshell = New-Object -ComObject Wscript.Shell
-$Confirmation = $wshell.Popup("Выполнить перезагрузку?",0, "Перезагрузка Windows Server",4+32)
-if ($Confirmation -eq 6) {
-    Restart-Computer -Force
-    WriteLog "Перезагрузка выполнена"
-} 
-else {
-    WriteLog "Перезагрузка не выполнена" 
-}
+#$wshell = New-Object -ComObject Wscript.Shell
+#$Confirmation = $wshell.Popup("Выполнить перезагрузку?",0, "Перезагрузка Windows Server",4+32)
+#if ($Confirmation -eq 6) {
+WriteLog "Запущена автоматическая перезагрузка"
+Restart-Computer -Force
+#WriteLog "Перезагрузка выполнена"
+#} 
+#else {
+#    WriteLog "Перезагрузка не выполнена" 
+#}

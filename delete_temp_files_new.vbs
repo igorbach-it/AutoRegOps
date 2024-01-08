@@ -30,7 +30,6 @@ for each objFolder in objProfileFolder.SubFolders
 			DeleteFolderContents sProfile & "\Local Settings\Temporary Internet Files\Content.MSO"
 			DeleteFolderContents sProfile & "\Local Settings\Temporary Internet Files"
 			DeleteFolderContents sProfile & "\Local Settings\Application Data\Mozilla\Firefox\Profiles"
-			DeleteFolderContents sProfile & "\Application Data\1C\1Cv82"
 			DeleteFolderContents sProfile & "\Local Settings\Google\Chrome\User Data\Default\Cache"
 	end select
 next

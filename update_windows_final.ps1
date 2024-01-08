@@ -1,6 +1,5 @@
 ﻿$wshell = New-Object -ComObject Wscript.Shell
 
-Start-Transcript C:\Scripts\update_windows_final_ERROR.log
 
 $Logfile = "C:\Scripts\update_windows_final.log"
 function WriteLog
@@ -75,12 +74,23 @@ else
 
 $Output = $wshell.Popup("Сканирование завершено, результаты можно будет посмотреть в каталоге $KVRTPath\$scannowDate\Reports",30,"Сканирование на вирусы")
 
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 # для windows server 2016
 Install-PackageProvider NuGet -Force
 Install-Module PSWindowsUpdate -Confirm:$false -Force # установщик обновлений через Pshell
-WindowsUpdate -AcceptAll -Install #-AutoReboot # скачивание и установка обновлений Windows
+Install-WindowsUpdate -AcceptAll -Install -AutoReboot | Out-File "C:\Scripts\WindowsUpdate_Temp.log" -force # скачивание и установка обновлений Windows
 
-    WriteLog "обновление windows завершено”
+      $files = dir C:\Scripts\WindowsUpdate_Temp.log
+if ($files -ne $null)
+{
+   WriteLog "обновление windows завершено - OK”
+}
+else
+{
+   WriteLog "обновление windows завершено - FAIL”
+}
+
+#Remove-item C:\Scripts\WindowsUpdate_Temp.log
 
 $Output = $wshell.Popup("обновление завершено",0,"Обновление windows")
 
-Stop-Transcript
+shutdown -r

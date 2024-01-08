@@ -40,32 +40,52 @@ $foldersToDelete = @(
 #    "\ocal Settings\Google\Chrome\User Data\Default\Cache"
 )
 
-# Получите корень каталога профиля пользователя
-$userProfileRoot = [System.Environment]::GetEnvironmentVariable("USERPROFILE")
-$userProfileRoot = Split-Path $userProfileRoot
+# Получите список всех профилей пользователей, исключая системные аккаунты
+$userProfiles = Get-ChildItem C:\Users -Directory | Where-Object { $_.Name -notin @("Public", "Default", "Default User", "All Users", "localservice", "networkservice", ".NET v4.5") }
 
-# Получите системный каталог TEMP и каталог Windows
-#$tempDir = [System.Environment]::GetEnvironmentVariable("TEMP")
-$windowsDir = [System.Environment]::GetEnvironmentVariable("WINDIR")
+foreach ($profile in $userProfiles) {
+    # Получите полный путь к папке Temp каждого пользователя
+    $tempPath = Join-Path -Path $profile.FullName -ChildPath "AppData\Local\Temp"
 
-# Для каждого подкаталога в корневом каталоге профиля пользователя
-Get-ChildItem $userProfileRoot | ForEach-Object {
-    if ($_.Name -notin @("all users", "default user", "localservice", "networkservice")) {
-        WriteLog "Обработка профиля: $($_.Name)"
-        
-        # Удалить указанные папки
-        $foldersToDelete | ForEach-Object {
-            $folderToDelete = $_
-            $folderPath = Join-Path -Path $userProfileRoot -ChildPath ("{0}\{1}" -f $_.Name, $folderToDelete)
-            if (Test-Path $folderPath) {
-                WriteLog "Удаление $folderPath"
-                Remove-Item -Path $folderPath -Recurse -Force -ErrorAction SilentlyContinue
-            } else {
-                WriteLog "Папка для удаления не найдена: $folderPath"
-            }
+    if (Test-Path $tempPath) {
+        WriteLog "Удаление содержимого $tempPath"
+        # Удаление всех файлов и поддиректорий внутри Temp, но не саму директорию Temp
+        Get-ChildItem -Path $tempPath -Recurse | ForEach-Object {
+            Remove-Item $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
         }
+    } else {
+        WriteLog "Папка Temp не найдена: $tempPath"
     }
 }
+
+
+
+# Получите корень каталога профиля пользователя
+# $userProfileRoot = [System.Environment]::GetEnvironmentVariable("USERPROFILE")
+# $userProfileRoot = Split-Path $userProfileRoot
+
+#Получите системный каталог TEMP и каталог Windows
+#$tempDir = [System.Environment]::GetEnvironmentVariable("TEMP")
+# $windowsDir = [System.Environment]::GetEnvironmentVariable("WINDIR")
+
+#Для каждого подкаталога в корневом каталоге профиля пользователя
+# Get-ChildItem $userProfileRoot | ForEach-Object {
+    # if ($_.Name -notin @("all users", "default user", "localservice", "networkservice")) {
+        # WriteLog "Обработка профиля: $($_.Name)"
+        
+        #Удалить указанные папки
+        # $foldersToDelete | ForEach-Object {
+            # $folderToDelete = $_
+            # $folderPath = Join-Path -Path $userProfileRoot -ChildPath ("{0}\{1}" -f $_.Name, $folderToDelete)
+            # if (Test-Path $folderPath) {
+                # WriteLog "Удаление $folderPath"
+                # Remove-Item -Path $folderPath -Recurse -Force -ErrorAction SilentlyContinue
+            # } else {
+                # WriteLog "Папка для удаления не найдена: $folderPath"
+            # }
+        # }
+    # }
+# }
 
 # Удалить содержимое системного каталога TEMP
 #WriteLog "Обработка папки: $tempDir"
@@ -188,7 +208,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Undefined
 $wshell = New-Object -ComObject Wscript.Shell
 $Confirmation = $wshell.Popup("Выполнить перезагрузку?",0, "Перезагрузка Windows Server",4+32)
 if ($Confirmation -eq 6) {
-    shutdown -r
+    Restart-Computer -Force
     WriteLog "Перезагрузка выполнена"
 } 
 else {

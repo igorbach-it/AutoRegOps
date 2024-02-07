@@ -11,7 +11,56 @@ function WriteLog {
 
 $LogFile = "C:\Scripts\windows_update.log" # Файл логирования
 
-WriteLog "Начало выполнения скрипта"
+# Определение имени службы
+$serviceName = "1C:Enterprise 8.3 Server Agent (x86-64)"
+
+# Проверка наличия службы
+$service = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
+if ($service -ne $null) {
+    WriteLog "Служба $serviceName найдена. Выполнение операций с 1С."
+
+    # Остановка процессов 1С
+    "rphost*", "rmngr*", "ragent*" | ForEach-Object {
+        Get-Process -Name $_ -ErrorAction SilentlyContinue | Stop-Process -Force
+    }
+
+# Остановка службы, если она запущена
+if ($service.Status -eq 'Running') {
+    Stop-Service -Name $serviceName -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 5 # Даем время на остановку службы
+    $service.Refresh()
+    if ($service.Status -ne 'Stopped') {
+        WriteLog "Не удалось остановить службу ${serviceName}."
+    }
+}
+
+# Получение пути к службе и определение пути к srvinfo
+$servicePath = Get-WmiObject win32_service | Where-Object { $_.Name -like "*$serviceName*" } | Select-Object -ExpandProperty PathName
+$srvinfoPath = ""
+if ($servicePath -match '-d\s+"([^"]+)"') {
+    $srvinfoPath = $matches[1]
+}
+
+WriteLog "Путь к srvinfo: $srvinfoPath"
+
+# Очистка содержимого в папках snccntx* внутри srvinfo\reg_1541
+if (-not [string]::IsNullOrEmpty($srvinfoPath)) {
+    $snccntxPath = Join-Path -Path $srvinfoPath -ChildPath "reg_1541\snccntx*"
+    Get-ChildItem -Path $snccntxPath -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+        Remove-Item -Path $_.FullName -Recurse -Force
+        WriteLog "Очищена папка: $($_.FullName)"
+    }
+}
+
+    # Запуск службы, если она была остановлена
+    if ($service.Status -eq 'Stopped') {
+        Start-Service -Name $serviceName
+        WriteLog "Служба ${serviceName} была запущена."
+    }
+} else {
+    WriteLog "Служба $serviceName не найдена. Операции с 1С пропущены."
+}
+WriteLog "--------------------------------"
 
 # Проверяем существование необходимых файлов и папок
 $requiredPaths = @("C:\Scripts\update_windows_after_reboot.bat", "C:\Scripts\KVRT", "C:\Scripts")
@@ -92,7 +141,7 @@ if ($IisInstalled.Installed) {
     WriteLog "IIS не установлен"
 }
 
-
+WriteLog "--------------------------------"
 $KVRTPath = "C:\Scripts\KVRT"
 
 WriteLog "Создаем директории C:\Scripts\KVR"
@@ -123,7 +172,7 @@ if ($files -ne $null) {
 } else {
     WriteLog "Антивирус завершил сканирование, результаты можно посмотреть $KVRTPath\$scannowDate\Reports - FAIL"
 }
-
+WriteLog "--------------------------------"
 # Получение информации о службе обновления Windows
 $windowsUpdateService = Get-Service -Name wuauserv
 

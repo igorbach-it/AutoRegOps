@@ -8,8 +8,9 @@ function WriteLog {
     Add-Content $LogFile -Value $LogMessage
     Write-Host $LogMessage
 }
-
-$LogFile = "C:\Scripts\windows_update.log" # Файл логирования
+$regDate = Get-Date -Format "dd/MM/yyyy"
+New-Item -ErrorAction Ignore -ItemType directory -Path "C:\Scripts\RegOps\Log_$regDate"
+$LogFile = "C:\Scripts\RegOps\Log_$regDate\RegOps.log" # Файл логирования
 
 # Определение имени службы
 $serviceName = "1C:Enterprise 8.3 Server Agent (x86-64)"
@@ -63,7 +64,7 @@ if (-not [string]::IsNullOrEmpty($srvinfoPath)) {
 WriteLog "--------------------------------"
 
 # Проверяем существование необходимых файлов и папок
-$requiredPaths = @("C:\Scripts\update_windows_after_reboot.bat", "C:\Scripts\KVRT", "C:\Scripts")
+$requiredPaths = @("C:\Scripts\RegOps\KVRT", "C:\Scripts")
 foreach ($path in $requiredPaths) {
     if (-not (Test-Path $path)) {
         WriteLog "Не найден путь $path, создание..."
@@ -73,7 +74,7 @@ foreach ($path in $requiredPaths) {
 
 $Trigger = New-ScheduledTaskTrigger -AtStartup
 $User = "NT AUTHORITY\SYSTEM"
-$Action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "C:\Scripts\update_windows_after_reboot.bat"
+$Action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "C:\scripts\update_windows_after_reboot.ps1"
 Register-ScheduledTask -TaskName "update_windows_after_reboot" -Trigger $Trigger -User $User -Action $Action -RunLevel Highest -Force
 
 WriteLog "Скрипт на обновления после перезагрузки добавлен"
@@ -142,9 +143,9 @@ if ($IisInstalled.Installed) {
 }
 
 WriteLog "--------------------------------"
-$KVRTPath = "C:\Scripts\KVRT"
+$KVRTPath = "C:\Scripts\RegOps\KVRT"
 
-WriteLog "Создаем директории C:\Scripts\KVR"
+WriteLog "Создаем директории C:\Scripts\RegOps\KVRT"
 New-Item -ErrorAction Ignore -ItemType directory -Path $KVRTPath
 New-Item -ErrorAction Ignore -ItemType directory -Path "$KVRTPath\UU"
 
@@ -215,14 +216,14 @@ if (-not (Get-Module -ListAvailable -Name PSWindowsUpdate)) {
 Start-Sleep -Seconds 30
 
 # Установка обновлений Windows
-$UpdateLogPath = "C:\Scripts\WindowsUpdate_Temp.log"
+$UpdateLogPath = "C:\Scripts\RegOps\Log_$regDate\WindowsUpdate_Temp.log"
 WriteLog "Установка обновлений Windows"
 Install-WindowsUpdate -AcceptAll -Install -AutoReboot | Out-File -FilePath $UpdateLogPath -Force
 WriteLog "Установка обновлений завершена"
 
 
 
-      $files = dir C:\Scripts\WindowsUpdate_Temp.log
+      $files = dir C:\Scripts\RegOps\Log_$regDate\WindowsUpdate_Temp.log
 if ($files -ne $null)
 {
    WriteLog "обновление windows завершено - OK”

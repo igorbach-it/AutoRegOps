@@ -1,4 +1,5 @@
 ﻿# Устанавливаем политику выполнения скриптов
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 Start-Sleep -Seconds 5

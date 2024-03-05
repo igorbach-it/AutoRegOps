@@ -1,7 +1,3 @@
-param(
-    [string]$Action
-)
-
 # Создаем функцию логирования
 function WriteLog {
     Param ([string]$LogString)
@@ -42,7 +38,7 @@ if (-not (Get-Module -ListAvailable -Name PSWindowsUpdate)) {
 }
 
 # Задержка перед установкой обновлений (если это необходимо)
-Start-Sleep -Seconds 30
+Start-Sleep -Seconds 20
 
 # Установка обновлений Windows
 $UpdateLogPath = "C:\Scripts\RegOps\Log_$regDate\WindowsUpdate_Temp_AfterReboot.log"
@@ -64,6 +60,8 @@ else
 
 Unregister-ScheduledTask -TaskName "update_windows_after_reboot" -Confirm:$false
 
+# Проверка наличия файла с учетными данными
+if (Test-Path -Path "C:\Scripts\RegOps\creds.enc") {
 
 $PSEmailServer = 'smtp.mail.ru'
 $client = $env:computername
@@ -94,4 +92,8 @@ Send-MailMessage -Port 587 `
      -Encoding 'UTF8' `
      -Attachments $attachments
 
-WriteLog "Отчет отправлен на адрес $toAddress”
+     WriteLog "Отчет отправлен на адрес $toAddress”
+} else {
+    # Вывод сообщения об отсутствии файла и выход из скрипта
+     WriteLog "Файл C:\Scripts\RegOps\creds.enc не найден. Отчет не будет отправлен."
+}

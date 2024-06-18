@@ -17,7 +17,7 @@ New-Item -ErrorAction Ignore -ItemType directory -Path "C:\Scripts\RegOps"
 
 $scriptContent = {
 
-$username = 'regops@efsol.ru'
+$username = 'regops@service.efsol.ru'
 $password = Read-Host "Введите пароль от $username" -AsSecureString
 $toAddress = Read-Host "Введите адрес электронной почты получателя"
 

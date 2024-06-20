@@ -1,4 +1,4 @@
-# Создаем функцию логирования
+п»ї# РЎРѕР·РґР°РµРј С„СѓРЅРєС†РёСЋ Р»РѕРіРёСЂРѕРІР°РЅРёСЏ
 function WriteLog {
     Param ([string]$LogString)
 
@@ -9,69 +9,69 @@ function WriteLog {
 }
 $regDate = Get-Date -Format "dd/MM/yyyy"
 New-Item -ErrorAction Ignore -ItemType directory -Path "C:\Scripts\RegOps\Log_$regDate"
-$LogFile = "C:\Scripts\RegOps\Log_$regDate\RegOps.log" # Файл логирования
+$LogFile = "C:\Scripts\RegOps\Log_$regDate\RegOps.log" # Р¤Р°Р№Р» Р»РѕРіРёСЂРѕРІР°РЅРёСЏ
 Set-ExecutionPolicy RemoteSigned -Force
-# Проверка и запуск службы обновления Windows
+# РџСЂРѕРІРµСЂРєР° Рё Р·Р°РїСѓСЃРє СЃР»СѓР¶Р±С‹ РѕР±РЅРѕРІР»РµРЅРёСЏ Windows
 $windowsUpdateService = Get-Service -Name wuauserv
 if ($windowsUpdateService.Status -ne "Running") {
-    WriteLog "Запуск службы обновления Windows(Script After Reboot)"
+    WriteLog "Р—Р°РїСѓСЃРє СЃР»СѓР¶Р±С‹ РѕР±РЅРѕРІР»РµРЅРёСЏ Windows(Script After Reboot)"
     Start-Service -Name wuauserv
 } else {
-    WriteLog "Служба обновления Windows уже запущена(Script After Reboot)"
+    WriteLog "РЎР»СѓР¶Р±Р° РѕР±РЅРѕРІР»РµРЅРёСЏ Windows СѓР¶Рµ Р·Р°РїСѓС‰РµРЅР°(Script After Reboot)"
 }
 
-# Установка модуля PackageManagement, если отсутствует
+# РЈСЃС‚Р°РЅРѕРІРєР° РјРѕРґСѓР»СЏ PackageManagement, РµСЃР»Рё РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚
 if (-not (Get-Module -ListAvailable -Name PackageManagement)) {
-    WriteLog "Установка модуля PackageManagement(Script After Reboot)"
+    WriteLog "РЈСЃС‚Р°РЅРѕРІРєР° РјРѕРґСѓР»СЏ PackageManagement(Script After Reboot)"
     Install-Module -Name PackageManagement -Force -Scope CurrentUser
 } else {
-    WriteLog "Модуль PackageManagement уже установлен(Script After Reboot)"
+    WriteLog "РњРѕРґСѓР»СЊ PackageManagement СѓР¶Рµ СѓСЃС‚Р°РЅРѕРІР»РµРЅ(Script After Reboot)"
 }
 
-# Проверка и установка модуля PSWindowsUpdate
+# РџСЂРѕРІРµСЂРєР° Рё СѓСЃС‚Р°РЅРѕРІРєР° РјРѕРґСѓР»СЏ PSWindowsUpdate
 if (-not (Get-Module -ListAvailable -Name PSWindowsUpdate)) {
-    WriteLog "Установка модуля PSWindowsUpdate(Script After Reboot)"
+    WriteLog "РЈСЃС‚Р°РЅРѕРІРєР° РјРѕРґСѓР»СЏ PSWindowsUpdate(Script After Reboot)"
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     Install-Module -Name PSWindowsUpdate -Force -Confirm:$false -Scope CurrentUser
 } else {
-    WriteLog "Модуль PSWindowsUpdate уже установлен(Script After Reboot)"
+    WriteLog "РњРѕРґСѓР»СЊ PSWindowsUpdate СѓР¶Рµ СѓСЃС‚Р°РЅРѕРІР»РµРЅ(Script After Reboot)"
 }
 
-# Задержка перед установкой обновлений (если это необходимо)
+# Р—Р°РґРµСЂР¶РєР° РїРµСЂРµРґ СѓСЃС‚Р°РЅРѕРІРєРѕР№ РѕР±РЅРѕРІР»РµРЅРёР№ (РµСЃР»Рё СЌС‚Рѕ РЅРµРѕР±С…РѕРґРёРјРѕ)
 Start-Sleep -Seconds 20
 
-# Установка обновлений Windows
+# РЈСЃС‚Р°РЅРѕРІРєР° РѕР±РЅРѕРІР»РµРЅРёР№ Windows
 $UpdateLogPath = "C:\Scripts\RegOps\Log_$regDate\WindowsUpdate_Temp_AfterReboot.log"
-WriteLog "Установка обновлений Windows(Script After Reboot)"
+WriteLog "РЈСЃС‚Р°РЅРѕРІРєР° РѕР±РЅРѕРІР»РµРЅРёР№ Windows(Script After Reboot)"
 Install-WindowsUpdate -AcceptAll -Install -AutoReboot | Out-File -FilePath $UpdateLogPath -Force
-WriteLog "Установка обновлений завершена(Script After Reboot)"
+WriteLog "РЈСЃС‚Р°РЅРѕРІРєР° РѕР±РЅРѕРІР»РµРЅРёР№ Р·Р°РІРµСЂС€РµРЅР°(Script After Reboot)"
 
 
 
       $files = dir C:\Scripts\RegOps\Log_$regDate\WindowsUpdate_Temp_AfterReboot.log
 if ($files -ne $null)
 {
-   WriteLog "Новые обновления найдены и установлены(Script After Reboot)”
+   WriteLog "РќРѕРІС‹Рµ РѕР±РЅРѕРІР»РµРЅРёСЏ РЅР°Р№РґРµРЅС‹ Рё СѓСЃС‚Р°РЅРѕРІР»РµРЅС‹(Script After Reboot)вЂќ
 }
 else
 {
-   WriteLog "Новых обновлений не найдено(Script After Reboot)”
+   WriteLog "РќРѕРІС‹С… РѕР±РЅРѕРІР»РµРЅРёР№ РЅРµ РЅР°Р№РґРµРЅРѕ(Script After Reboot)вЂќ
 }
 
 Unregister-ScheduledTask -TaskName "update_windows_after_reboot" -Confirm:$false
 
-# Проверка наличия файла с учетными данными
+# РџСЂРѕРІРµСЂРєР° РЅР°Р»РёС‡РёСЏ С„Р°Р№Р»Р° СЃ СѓС‡РµС‚РЅС‹РјРё РґР°РЅРЅС‹РјРё
 if (Test-Path -Path "C:\Scripts\RegOps\creds.enc") {
 
 $PSEmailServer = 'smtp.mail.ru'
 $client = $env:computername
-# Путь к файлу с зашифрованными данными
+# РџСѓС‚СЊ Рє С„Р°Р№Р»Сѓ СЃ Р·Р°С€РёС„СЂРѕРІР°РЅРЅС‹РјРё РґР°РЅРЅС‹РјРё
 $encryptedFilePath = "C:\Scripts\RegOps\creds.enc"
 
 $reportRegOps = "C:\Scripts\RegOps\Log_$regDate"
 #$cred = Import-Clixml -Path $encryptedFilePath
 $credsAndRecipient = Import-Clixml -Path "C:\Scripts\RegOps\creds.enc"
-# Извлечение учетных данных и адреса получателя
+# РР·РІР»РµС‡РµРЅРёРµ СѓС‡РµС‚РЅС‹С… РґР°РЅРЅС‹С… Рё Р°РґСЂРµСЃР° РїРѕР»СѓС‡Р°С‚РµР»СЏ
 $cred = $credsAndRecipient.Credential
 $toAddress = $credsAndRecipient.Recipient
 
@@ -81,19 +81,19 @@ $attachments = "C:\Scripts\RegOps\Log_$regDate\$client-$regDate.zip"
 
 Start-Sleep -Seconds 5
 
-# Попытка отправки почты
+# РџРѕРїС‹С‚РєР° РѕС‚РїСЂР°РІРєРё РїРѕС‡С‚С‹
 Send-MailMessage -Port 587 `
      -From "$client <regops@efsol.ru>" `
      -To $toAddress `
-     -Subject "Отчет Регламентные Операции $client" `
-     -Body "Отчет Регламентные Операции $client" `
+     -Subject "РћС‚С‡РµС‚ Р РµРіР»Р°РјРµРЅС‚РЅС‹Рµ РћРїРµСЂР°С†РёРё $client" `
+     -Body "РћС‚С‡РµС‚ Р РµРіР»Р°РјРµРЅС‚РЅС‹Рµ РћРїРµСЂР°С†РёРё $client" `
      -UseSsl `
      -Credential $cred `
      -Encoding 'UTF8' `
      -Attachments $attachments
 
-     WriteLog "Отчет отправлен на адрес $toAddress”
+     WriteLog "РћС‚С‡РµС‚ РѕС‚РїСЂР°РІР»РµРЅ РЅР° Р°РґСЂРµСЃ $toAddressвЂќ
 } else {
-    # Вывод сообщения об отсутствии файла и выход из скрипта
-     WriteLog "Файл C:\Scripts\RegOps\creds.enc не найден. Отчет не будет отправлен."
+    # Р’С‹РІРѕРґ СЃРѕРѕР±С‰РµРЅРёСЏ РѕР± РѕС‚СЃСѓС‚СЃС‚РІРёРё С„Р°Р№Р»Р° Рё РІС‹С…РѕРґ РёР· СЃРєСЂРёРїС‚Р°
+     WriteLog "Р¤Р°Р№Р» C:\Scripts\RegOps\creds.enc РЅРµ РЅР°Р№РґРµРЅ. РћС‚С‡РµС‚ РЅРµ Р±СѓРґРµС‚ РѕС‚РїСЂР°РІР»РµРЅ."
 }
